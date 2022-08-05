@@ -45,7 +45,7 @@ args = parser.parse_args()
 
 
 def start_driver():
-    PROXY = FreeProxy(country_id=['US'],  timeout=0.3, rand=True).get()
+    #PROXY = FreeProxy(country_id=['US'],  timeout=0.3, rand=True).get()
     chrome_options = webdriver.ChromeOptions()
     if (args.cloud == CLOUD_ENABLED):
 
@@ -57,7 +57,7 @@ def start_driver():
         chrome_options.add_argument('--allow-running-insecure-content')
         user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
         chrome_options.add_argument(f'user-agent={user_agent}')
-        chrome_options.add_argument('--proxy-server=%s' % PROXY)
+        #chrome_options.add_argument('--proxy-server=%s' % PROXY)
         driver = webdriver.Chrome('chromedriver', options=chrome_options)
     else:
 
@@ -67,7 +67,7 @@ def start_driver():
         chrome_options.add_argument('--ignore-certificate-errors')
         chrome_options.add_argument('--allow-running-insecure-content')
         user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
-        chrome_options.add_argument('--proxy-server=%s' % PROXY)
+        #chrome_options.add_argument('--proxy-server=%s' % PROXY)
         driver = webdriver.Chrome(
             ChromeDriverManager().install(), options=chrome_options)
 
@@ -109,7 +109,7 @@ def saveFile(content, filename):
 
 def solveCaptcha(driver):
     # Logic to click through the reCaptcha to the Audio Challenge, download the challenge mp3 file, run it through the audioToText function, and send answer
-    #googleClass = driver.find_elements_by_class_name(CAPTCHA_BOX)[0]
+    #googleClass = driver.find_elements(By.CCAPTCHA_BOX)[0]
     #googleClass = driver.find_element(By.XPATH, "//iframe[@title='reCAPTCHA']")
     # time.sleep(2)
     #outeriframe = googleClass.find_element_by_tag_name('iframe')
@@ -119,18 +119,18 @@ def solveCaptcha(driver):
     time.sleep(1)
     outeriframe.click()
     time.sleep(2)
-    allIframesLen = driver.find_elements_by_tag_name('iframe')
+    allIframesLen = driver.find_elements(By.TAG_NAME, 'iframe')
     time.sleep(1)
     audioBtnFound = False
     audioBtnIndex = -1
     for index in range(len(allIframesLen)):
         driver.switch_to.default_content()
-        iframe = driver.find_elements_by_tag_name('iframe')[index]
+        iframe = driver.find_elements(By.TAG_NAME, 'iframe')[index]
         driver.switch_to.frame(iframe)
         driver.implicitly_wait(2)
         try:
-            audioBtn = driver.find_element_by_id(
-                RECAPTCHA_AUDIO_BUTTON) or driver.find_element_by_id(RECAPTCHA_ANCHOR)
+            audioBtn = driver.find_element(By.ID,
+                                           RECAPTCHA_AUDIO_BUTTON) or driver.find_element(By.ID, RECAPTCHA_ANCHOR)
             audioBtn.click()
             audioBtnFound = True
             audioBtnIndex = index
@@ -147,23 +147,31 @@ def solveCaptcha(driver):
                 except Exception as e:
                     print(f"Waiting broke lmao {e}")
                 """
-                driver.implicitly_wait(10)
-                href = driver.find_element_by_id(
-                    AUDIO_SOURCE).get_attribute('src')
+
+                try:
+                    time.sleep(3)
+                    WebDriverWait(driver, 20).until(
+                        expected_conditions.presence_of_element_located((By.ID, AUDIO_SOURCE)))
+                except Exception as e:
+                    print(f"Waiting broke lmao {e}")
+
+                # driver.implicitly_wait(10)
+                href = driver.find_element(By.ID,
+                                           AUDIO_SOURCE).get_attribute('src')
                 response = requests.get(href, stream=True)
                 saveFile(response, CAPTCHA_MP3_FILENAME)
                 response = audioToText(CAPTCHA_MP3_FILENAME)
                 print(response)
                 driver.switch_to.default_content()
-                iframe = driver.find_elements_by_tag_name('iframe')[
+                iframe = driver.find_elements(By.TAG_NAME, 'iframe')[
                     audioBtnIndex]
                 driver.switch_to.frame(iframe)
-                inputbtn = driver.find_element_by_id(AUDIO_RESPONSE)
+                inputbtn = driver.find_element(By.ID, AUDIO_RESPONSE)
                 inputbtn.send_keys(response)
                 inputbtn.send_keys(Keys.ENTER)
                 time.sleep(2)
-                errorMsg = driver.find_elements_by_class_name(
-                    AUDIO_ERROR_MESSAGE)[0]
+                errorMsg = driver.find_elements(By.CLASS_NAME,
+                                                AUDIO_ERROR_MESSAGE)[0]
                 if errorMsg.text == "" or errorMsg.value_of_css_property('display') == 'none':
                     print(f"reCaptcha defeated!")
                     break
@@ -193,22 +201,31 @@ def rand_grade():
 
 def fill_form(driver):
     email = fake.email()
-    driver.find_element_by_id('input_comp-kyjjs2d5').send_keys(email)
+    driver.find_element(By.ID, 'input_comp-kyjjs2d5').send_keys(email)
     #time.sleep(random.randint(0, 2))
-    driver.find_element_by_id('input_comp-kyjjs2da').send_keys(email)
+    driver.find_element(By.ID, 'input_comp-kyjjs2da').send_keys(email)
     #time.sleep(random.randint(0, 2))
-    driver.find_element_by_id(
-        'input_comp-kyjjs2de').send_keys(fake.school_name())
+    driver.find_element(By.ID,
+                        'input_comp-kyjjs2de').send_keys(fake.school_name())
     #time.sleep(random.randint(0, 2))
-    driver.find_element_by_id('input_comp-kyjjs2di').send_keys(pick_teacher())
+    driver.find_element(By.ID, 'input_comp-kyjjs2di').send_keys(pick_teacher())
     #time.sleep(random.randint(0, 2))
-    driver.find_element_by_id('input_comp-kyjjs2dm1').send_keys(rand_grade())
+    driver.find_element(By.ID, 'input_comp-kyjjs2dm1').send_keys(rand_grade())
     #time.sleep(random.randint(0, 2))
 
     driver.find_element(
         By.XPATH, '/html/body/div/div/div[3]/div/main/div/div/div/div[2]/div/div/div/section/div[2]/div/div[2]/div/section/div[2]/div/div[2]/div/div[2]/div/div/form/div/div/div[6]/div/div').click()
 
+    i = 0
+
+    while (i < 10) and (not bool(driver.find_elements(By.CLASS_NAME, '_1gCtg'))):
+        time.sleep(1)
+        i += 1
+
+    # if driver.find_elements(By.CLASS_NAME, '_1gCtg') != []:
+
     random.choice(driver.find_elements(By.CLASS_NAME, '_1gCtg')).click()
+
     time.sleep(random.randint(0, 2))
     cbs = driver.find_elements(By.XPATH, "//input[@type='checkbox']")
 
@@ -232,12 +249,13 @@ def fill_form(driver):
             print("Successfully submitted form")
             count_form()
         except:
+            print(driver.page_source)
             print("Captcha not found or failed to solve")
         return
     # print(driver.page_source)
 
-    # driver.find_element_by_id('input_comp-kyjjs2ej').send_keys('bad things')
-    # driver.find_element_by_id('input_comp-kyjjs2ev').send_keys('oilsprite.png')
+    # driver.find_element(By.ID, 'input_comp-kyjjs2ej').send_keys('bad things')
+    # driver.find_element(By.ID, 'input_comp-kyjjs2ev').send_keys('oilsprite.png')
 
 
 def count_form():
